@@ -17,7 +17,7 @@ jobs:
 
       - name: Build Archive
         run: |
-          xcodebuild -project TuProjet.xcodeproj \
+          xcodebuild -project Papillon.xcodeproj \
                      -scheme TonScheme \
                      -archivePath build/App.xcarchive \
                      archive \
