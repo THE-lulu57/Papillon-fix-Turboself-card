@@ -20,7 +20,7 @@ jobs:
       - name: Install Pods
         working-directory: ios
         run: |
-          pod instal
+          pod install
 
       - name: Build app (no signing)
         run: |
