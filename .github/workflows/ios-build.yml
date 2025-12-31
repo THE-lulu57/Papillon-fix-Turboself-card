@@ -1,56 +1,59 @@
-name: Build iOS (unsigned)
+name: iOS Build (Unsigned)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build-ios:
+  ios:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
+      - uses: actions/checkout@v4
+
+      - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          
-      - name: Installation de Yarn
-        run: npm install -g yarn
-        
-      - name: Installation des dépendances
-        run: yarn install --ignore-scripts || true
-        
-      - name: Suppression des patches problématiques
+          node-version: 20
+
+      - name: Install Bun
         run: |
-          rm -f patches/@react-native-menu+menu+1.2.4.patch
-          rm -f patches/react-native-mmkv+3.3.0.patch
-          
-      - name: Réinstallation avec patches corrigés
-        run: yarn install
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - name: Install CocoaPods
-        run: sudo gem install cocoapods
-
-      - name: Install Pods
-        working-directory: ios
-        run: pod install
-
-      - name: Build iOS app
         run: |
-          xcodebuild \
-            -workspace ios/Papillon.xcworkspace \
-            -scheme Papillon \
-            -configuration Debug \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
-            build
+          cd ios
+          pod install
 
-      - name: Upload .app
+      - name: Install Dependancies
+        run: |
+          npm install
+
+      - name: Prebuild Expo
+        run: |
+          npx expo prebuild
+
+      - name: Prebuild Ios
+        run: |
+          npx prebuild
+
+      - name: Build iOS (no signing)
+        run: |
+          cd ios
+          xcodebuild \
+            -workspace Papillon.xcworkspace \
+            -scheme Papillon \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build
+
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: Papillon-app
-          path: ios/build/Debug-iphoneos/*.app
+          name: ios-build
+          path: ios/build
+
+
+
+      
