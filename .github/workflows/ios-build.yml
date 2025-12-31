@@ -43,6 +43,10 @@ jobs:
     - name: Installation de CocoaPods
       run: |
         cd ios
+        # Ajouter use_modular_headers! au Podfile
+        if ! grep -q "use_modular_headers!" Podfile; then
+          sed -i '' '1s/^/use_modular_headers!\n\n/' Podfile
+        fi
         pod install
         cd ..
         
