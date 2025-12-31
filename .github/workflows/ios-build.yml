@@ -12,6 +12,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+
+      - name: Install Pods
+        working-directory: ios
+        run: |
+          pod instal
+
       - name: Build app (no signing)
         run: |
           xcodebuild \
