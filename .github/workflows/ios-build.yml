@@ -24,6 +24,14 @@ jobs:
       run: npm install -g yarn
       
     - name: Installation des dépendances
+      run: yarn install --ignore-scripts || true
+      
+    - name: Suppression des patches problématiques
+      run: |
+        rm -f patches/@react-native-menu+menu+1.2.4.patch
+        rm -f patches/react-native-mmkv+3.3.0.patch
+        
+    - name: Réinstallation avec patches corrigés
       run: yarn install
       
     - name: Setup Ruby
