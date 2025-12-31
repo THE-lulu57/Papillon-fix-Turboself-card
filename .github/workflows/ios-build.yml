@@ -15,7 +15,7 @@ jobs:
       - name: Build app (no signing)
         run: |
           xcodebuild \
-            -project /ios/Papillon.xcodeproj \
+            -project ios/Papillon.xcodeproj \
             -scheme Papillon \
             -configuration Debug \
             -sdk iphoneos \
