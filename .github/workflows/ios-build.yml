@@ -1,36 +1,64 @@
-name: Build IPA
-on: [workflow_dispatch] # Permet de lancer le build manuellement
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch: # déclenchable manuellement
+  push:
+    branches: [ "main" ]
 
 jobs:
-  build:
+  build-ios:
+    name: Build IPA
     runs-on: macos-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: Select Xcode Version
-        run: |
-          # Cette commande liste les Xcode dispos et prend le plus récent
-          XCODE_PATH=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
-          echo "Utilisation de : $XCODE_PATH"
-
-      - name: Build Archive
-        run: |
-          xcodebuild -project ios/Papillon.xcodeproj \
-                     -scheme Papillon \
-                     -archivePath build/App.xcarchive \
-                     archive \
-                     CODE_SIGNING_ALLOWED=NO
-
-      - name: Create IPA (Unsigned)
-        run: |
-          mkdir -p build/Payload
-          cp -r build/App.xcarchive/Products/Applications/*.app build/Payload
-          cd build && zip -r TonApp.ipa Payload
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          name: my-app-ipa
-          path: build/TonApp.ipa
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          cd ios
+          pod install
+          cd ..
+
+      - name: Build unsigned iOS app
+        working-directory: ios
+        run: |
+          xcodebuild clean -workspace Papillon.xcworkspace \
+            -scheme Papillon \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+          xcodebuild -workspace Papillon.xcworkspace \
+            -scheme Papillon \
+            -configuration Release \
+            -sdk iphoneos \
+            archive \
+            -archivePath build/Papillon.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Make unsigned .ipa
+        working-directory: ios/build
+        run: |
+          mkdir -p Payload
+          cp -R Papillon.xcarchive/Products/Applications/Papillon.app Payload/
+          zip -r Papillon-unsigned.ipa Payload
+
+      - name: Upload unsigned IPA to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Papillon-unsigned.ipa
+          path: ios/build/Papillon-unsigned.ipa
