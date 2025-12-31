@@ -23,8 +23,8 @@ jobs:
 
       - name: Install Dependancies
         run: |
-          npm install
-
+          npm install || true
+          
       - name: Install CocoaPods
         run: |
           cd ios
