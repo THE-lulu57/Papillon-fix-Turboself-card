@@ -19,7 +19,7 @@ on:
 jobs:
   build-local:
     if: github.event.inputs.build_type == 'local' || github.event.inputs.build_type == ''
-    runs-on: macos-14
+    runs-on: macos-latest
     
     steps:
     - name: Checkout du code
