@@ -15,12 +15,7 @@ jobs:
 
       - name: Install CocoaPods
         run: |
-          sudo gem install cocoapods
-
-      - name: Install Pods
-        working-directory: ios
-        run: |
-          pod install
+          sudo gem install cocoapod
 
       - name: Build app (no signing)
         run: |
