@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
     - name: Checkout du code
@@ -47,13 +47,52 @@ jobs:
         if ! grep -q "use_modular_headers!" Podfile; then
           sed -i '' '1s/^/use_modular_headers!\n\n/' Podfile
         fi
-        pod install
+        pod install --repo-update
         cd ..
+        
+    - name: Préparer le build
+      run: |
+        cd ios
+        # Créer le dossier de build
+        mkdir -p build
+        
+    - name: Build avec Expo
+      run: |
+        npx expo prebuild --platform ios --clean || true
         
     - name: Build IPA (sans signature)
       run: |
         cd ios
-        xcodebuild -workspace Papillon.xcworkspace \
+        xcodebuild clean build \
+          -workspace Papillon.xcworkspace \
+          -scheme Papillon \
+          -configuration Release \
+          -sdk iphoneos \
+          -destination 'generic/platform=iOS' \
+          -derivedDataPath ./build/DerivedData \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
+          ENABLE_BITCODE=NO \
+          COMPILER_INDEX_STORE_ENABLE=NO \
+          ONLY_ACTIVE_ARCH=NO \
+          | tee xcodebuild.log
+          
+    - name: Upload logs si échec
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: ios/xcodebuild.log
+        retention-days: 7
+          
+    - name: Créer archive
+      run: |
+        cd ios
+        xcodebuild archive \
+          -workspace Papillon.xcworkspace \
           -scheme Papillon \
           -configuration Release \
           -sdk iphoneos \
@@ -61,7 +100,19 @@ jobs:
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
-          archive
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE_SPECIFIER="" \
+          ENABLE_BITCODE=NO
+          
+    - name: Vérifier l'archive
+      run: |
+        cd ios
+        if [ ! -d "build/Papillon.xcarchive" ]; then
+          echo "❌ L'archive n'a pas été créée"
+          exit 1
+        fi
+        ls -la build/Papillon.xcarchive/Products/Applications/
+        echo "✅ Archive créée avec succès"
           
     - name: Export IPA
       run: |
@@ -69,6 +120,12 @@ jobs:
         mkdir -p Payload
         cp -r build/Papillon.xcarchive/Products/Applications/Papillon.app Payload/
         zip -r Papillon-unsigned.ipa Payload
+        
+    - name: Informations sur l'IPA
+      run: |
+        cd ios
+        ls -lh Papillon-unsigned.ipa
+        unzip -l Papillon-unsigned.ipa | head -20
         
     - name: Upload IPA
       uses: actions/upload-artifact@v4
