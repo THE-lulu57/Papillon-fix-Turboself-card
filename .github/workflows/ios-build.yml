@@ -1,2 +1,29 @@
-- name: iOS Build Action
-  uses: yukiarrr/ios-build-action@v1.12.0
+name: Build iOS (unsigned)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build app (no signing)
+        run: |
+          xcodebuild \
+            -project /ios/Papillon.xcodeproj \
+            -scheme Papillon \
+            -configuration Debug \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload .app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: build/Debug-iphoneos/*.app
