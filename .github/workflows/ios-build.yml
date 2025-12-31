@@ -19,7 +19,7 @@ on:
 jobs:
   build-local:
     if: github.event.inputs.build_type == 'local' || github.event.inputs.build_type == ''
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
     - name: Checkout du code
@@ -29,7 +29,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'yarn'
         
     - name: Installation de Yarn
       run: npm install -g yarn
@@ -147,7 +146,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'yarn'
         
     - name: Setup Expo and EAS
       uses: expo/expo-github-action@v8
