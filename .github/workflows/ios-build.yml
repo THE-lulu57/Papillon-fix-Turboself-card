@@ -20,12 +20,14 @@ jobs:
       - name: Build app (no signing)
         run: |
           xcodebuild \
-            -project ios/Papillon.xcodeproj \
+            -workspace ios/Papillon.xcworkspace \
             -scheme Papillon \
             -configuration Debug \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build \
+            | xcpretty
 
       - name: Upload .app artifact
         uses: actions/upload-artifact@v4
