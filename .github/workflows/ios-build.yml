@@ -1,71 +1,78 @@
-name: Build unsigned iOS IPA
+name: Build IPA pour Sideload
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-  build-ios:
+  build:
     runs-on: macos-latest
-
+    
     steps:
-      # 1️⃣ Récupération du repo
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # 2️⃣ Node (React Native)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: npm
-
-      # 3️⃣ Dépendances JS
-      - name: Install npm dependencies
-        run: npm ci
-
-      # 4️⃣ CocoaPods
-      - name: Install CocoaPods dependencies
-        run: |
-          sudo gem install cocoapods
-          cd ios
-          pod install
-          cd ..
-
-      # 5️⃣ Build + archive SANS signature
-      - name: Build unsigned archive
-        run: |
-          cd ios
-
-          xcodebuild clean \
-            -workspace Papillon.xcworkspace \
-            -scheme Papillon \
-            -configuration Release
-
-          xcodebuild archive \
-            -workspace Papillon.xcworkspace \
-            -scheme Papillon \
-            -configuration Release \
-            -sdk iphoneos \
-            -archivePath build/Papillon.xcarchive \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
-
-      # 6️⃣ Création de l’IPA unsigned
-      - name: Create unsigned IPA
-        run: |
-          cd ios
-          mkdir -p build/ipa/Payload
-          cp -R build/Papillon.xcarchive/Products/Applications/*.app build/ipa/Payload/
-          cd build/ipa
-          zip -r Papillon-unsigned.ipa Payload
-
-      # 7️⃣ Upload artifact (VERSION À JOUR)
-      - name: Upload unsigned IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: Papillon-unsigned-ipa
-          path: ios/build/ipa/Papillon-unsigned.ipa
+    - name: Checkout du code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Installation de Yarn
+      run: npm install -g yarn
+      
+    - name: Installation des dépendances
+      run: yarn install
+      
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        bundler-cache: true
+        
+    - name: Installation de CocoaPods
+      run: |
+        cd ios
+        pod install
+        cd ..
+        
+    - name: Build IPA (sans signature)
+      run: |
+        cd ios
+        xcodebuild -workspace Papillon.xcworkspace \
+          -scheme Papillon \
+          -configuration Release \
+          -sdk iphoneos \
+          -archivePath $PWD/build/Papillon.xcarchive \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          archive
+          
+    - name: Export IPA
+      run: |
+        cd ios
+        mkdir -p Payload
+        cp -r build/Papillon.xcarchive/Products/Applications/Papillon.app Payload/
+        zip -r Papillon-unsigned.ipa Payload
+        
+    - name: Upload IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: Papillon-unsigned-ipa
+        path: ios/Papillon-unsigned.ipa
+        retention-days: 30
+        
+    - name: Créer Release (optionnel)
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: build-${{ github.run_number }}
+        name: Build ${{ github.run_number }}
+        files: ios/Papillon-unsigned.ipa
+        draft: false
+        prerelease: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
