@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Dependancies
         run: |
-          npm install || true
+          npm install
           
       - name: Install CocoaPods
         run: |
@@ -33,10 +33,6 @@ jobs:
       - name: Prebuild Expo
         run: |
           npx expo prebuild
-
-      - name: Prebuild Ios
-        run: |
-          npx prebuild
 
       - name: Build iOS (no signing)
         run: |
