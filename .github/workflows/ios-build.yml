@@ -9,27 +9,28 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
 
       - name: Install CocoaPods
-        run: |
-          sudo gem install cocoapods
+        run: sudo gem install cocoapods
 
-      - name: Build app (no signing)
+      - name: Install Pods
+        working-directory: ios
+        run: pod install
+
+      - name: Build iOS app
         run: |
           xcodebuild \
-            -project MyApp.xcodeproj \
-            -scheme MyApp \
+            -workspace ios/Papillon.xcworkspace \
+            -scheme Papillon \
             -configuration Debug \
             -sdk iphoneos \
-            -destination 'generic/platform=iOS' \ 
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Upload .app artifact
+      - name: Upload .app
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app
-          path: build/Debug-iphoneos/*.app
+          name: Papillon-app
+          path: ios/build/Debug-iphoneos/*.app
