@@ -37,15 +37,19 @@ jobs:
       - name: Prebuild Ios
         run: npx expo prebuild --platform ios --clean
 
-      - name: Build iOS (no signing)
+      - name: Build iOS app (verbose)
         run: |
-          cd ios
+          set -o pipefail
           xcodebuild \
-            -workspace Papillon.xcworkspace \
+            -workspace ios/Papillon.xcworkspace \
             -scheme Papillon \
-            -configuration Release \
-            -sdk iphonesimulator \
-            -derivedDataPath build
+            -configuration Debug \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM= \
+            clean build \
+            -verbose
 
       - name: Upload build
         uses: actions/upload-artifact@v4
