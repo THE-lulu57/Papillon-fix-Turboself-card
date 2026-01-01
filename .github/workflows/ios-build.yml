@@ -1,4 +1,4 @@
-name: iOS Build (Unsigned)
+name: iOS Build (Unsigned IPA)
 
 on:
   push:
@@ -21,42 +21,40 @@ jobs:
           curl -fsSL https://bun.sh/install | bash
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
-      - name: Install deps
-        run: npm install --legacy-peer-deps || true
-          
+      - name: Install JS dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Expo prebuild iOS
+        run: npx expo prebuild --platform ios --clean
+
       - name: Install CocoaPods
         run: |
           cd ios
           pod install
 
-      - name: Prebuild Expo
+      - name: Archive iOS app (unsigned)
         run: |
-          npx expo prebuild
-
-        
-      - name: Prebuild Ios
-        run: npx expo prebuild --platform ios --clean
-
-      - name: Build iOS app (verbose)
-        run: |
-          set -o pipefail
-          xcodebuild \
-            -workspace ios/Papillon.xcworkspace \
+          cd ios
+          xcodebuild archive \
+            -workspace Papillon.xcworkspace \
             -scheme Papillon \
-            -configuration Debug \
             -sdk iphoneos \
+            -configuration Debug \
             -destination 'generic/platform=iOS' \
+            -archivePath build/Papillon.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
             DEVELOPMENT_TEAM= \
-            clean build \
-            -verbose
+            SKIP_INSTALL=NO
 
-      - name: Upload build
+      - name: Create IPA
+        run: |
+          cd ios/build
+          mkdir Payload
+          cp -R Papillon.xcarchive/Products/Applications/Papillon.app Payload/
+          zip -r Papillon.ipa Payload
+
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build
-          path: ios/build
-
-
-
-      
+          name: Papillon-Unsigned-IPA
+          path: ios/build/Papillon.ipa
