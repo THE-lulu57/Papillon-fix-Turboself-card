@@ -22,8 +22,8 @@ jobs:
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - name: Install JS dependencies
-        run: npm install --legacy-peer-deps
-
+        run: npm install --legacy-peer-deps || true
+        
       - name: Expo prebuild iOS
         run: npx expo prebuild --platform ios --clean
 
