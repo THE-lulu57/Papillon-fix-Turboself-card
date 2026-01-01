@@ -39,7 +39,7 @@ jobs:
             -workspace Papillon.xcworkspace \
             -scheme Papillon \
             -sdk iphoneos \
-            -configuration Debug \
+            -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Papillon.xcarchive \
             CODE_SIGNING_ALLOWED=NO \
