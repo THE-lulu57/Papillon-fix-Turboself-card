@@ -53,8 +53,26 @@ jobs:
           cp -R Papillon.xcarchive/Products/Applications/Papillon.app Payload/
           zip -r Papillon.ipa Payload
 
-      - name: Upload IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Papillon-Unsigned-IPA
+          name: Papillon.ipa
           path: ios/build/Papillon.ipa
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "build-${{ github.run_number }}"
+          name: "Papillon Build #${{ github.run_number }}"
+          body: "Build Release automatique de l'IPA"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload IPA to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ios/build/Papillon.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
